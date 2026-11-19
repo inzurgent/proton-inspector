@@ -1,0 +1,20 @@
+# Local Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+
+# Local editor and desktop files
+.idea/
+.vscode/
+.DS_Store
+
+# Personal saved-address lists
+*.json
