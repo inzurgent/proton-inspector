@@ -13,7 +13,30 @@ A lightweight Linux desktop memory scanner and editor for games running through 
 - Keep named addresses in a separate tab and save/load JSON lists.
 - Try the workflow using an included demo process.
 
-## Requirements
+## Releases and AppImage download
+
+Download the **x86-64 AppImage** from [GitHub Releases](https://github.com/inzurgent/proton-inspector/releases).
+The first packaged release is **v0.1.0**, an experimental Linux desktop build.
+Python and Qt are included; no pip installation is needed.
+
+```bash
+chmod +x Proton-Inspector-0.1.0-x86_64.AppImage
+./Proton-Inspector-0.1.0-x86_64.AppImage
+```
+
+If your system cannot mount AppImages through FUSE:
+
+```bash
+./Proton-Inspector-0.1.0-x86_64.AppImage --appimage-extract-and-run
+```
+
+A `SHA256SUMS` file accompanies the release. Run `sha256sum -c SHA256SUMS`
+in the directory containing the downloaded assets to verify them. The image
+uses the same Linux process permissions as the source version. See the
+[packaging guide](packaging/README.md) for build instructions, extraction,
+library replacement and platform limitations.
+
+## Requirements (running from source)
 
 - Linux desktop with Python 3, `venv`, and `pip`.
 - A Python version supported by the PySide6 wheel available for your platform.

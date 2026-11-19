@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -eu
+APPDIR="$(cd -- "$(dirname -- "$(readlink -f -- "$0")")" && pwd)"
+export APPDIR
+export PYTHONNOUSERSITE=1
+export PYTHONDONTWRITEBYTECODE=1
+unset PYTHONHOME PYTHONPATH
+export LD_LIBRARY_PATH="$APPDIR/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export QT_PLUGIN_PATH="$APPDIR/opt/python3.12/lib/python3.12/site-packages/PySide6/Qt/plugins"
+exec "$APPDIR/opt/python3.12/bin/python3.12" -s "$APPDIR/usr/share/proton-inspector/packaging/launcher.py" "$@"

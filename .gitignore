@@ -18,3 +18,5 @@ dist/
 
 # Personal saved-address lists
 *.json
+!packaging/debian-lock.json
+*.AppImage

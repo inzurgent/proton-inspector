@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Proton Inspector
+Comment=Scan and edit numeric values in Linux and Proton processes
+Exec=AppRun
+Icon=proton-inspector
+Categories=Development;Utility;
+Terminal=false
+StartupWMClass=Proton Inspector

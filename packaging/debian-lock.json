@@ -1,0 +1,50 @@
+[
+  {
+    "Package": "libxkbcommon-x11-0",
+    "Version": "1.5.0-1",
+    "Filename": "pool/main/libx/libxkbcommon/libxkbcommon-x11-0_1.5.0-1_amd64.deb",
+    "SHA256": "9b34d760f0ca0f125419a6becc6492c489f0371953ef42caad3401199a497ff5"
+  },
+  {
+    "Package": "libxkbcommon0",
+    "Version": "1.5.0-1",
+    "Filename": "pool/main/libx/libxkbcommon/libxkbcommon0_1.5.0-1_amd64.deb",
+    "SHA256": "e3fe045b9a33a101de1c5a912a4a10928db055c3f68930f47eccbb44d7c7d54e"
+  },
+  {
+    "Package": "libxcb-util1",
+    "Version": "0.4.0-1+b1",
+    "Filename": "pool/main/x/xcb-util/libxcb-util1_0.4.0-1+b1_amd64.deb",
+    "SHA256": "4c48af51fb2ac1be0490067e7450aeda27bf6c6c395165de02199eee4835336f"
+  },
+  {
+    "Package": "libxcb-cursor0",
+    "Version": "0.1.4-1",
+    "Filename": "pool/main/x/xcb-util-cursor/libxcb-cursor0_0.1.4-1_amd64.deb",
+    "SHA256": "a4b3c32dc008275ffcacccc1c77c030f01aad38e232e05d5ad116b76656c607c"
+  },
+  {
+    "Package": "libxcb-image0",
+    "Version": "0.4.0-2",
+    "Filename": "pool/main/x/xcb-util-image/libxcb-image0_0.4.0-2_amd64.deb",
+    "SHA256": "a475522faef7672ca065fdcd2594bc755bfcc4d819909f9d944e8c002b4460d1"
+  },
+  {
+    "Package": "libxcb-keysyms1",
+    "Version": "0.4.0-1+b2",
+    "Filename": "pool/main/x/xcb-util-keysyms/libxcb-keysyms1_0.4.0-1+b2_amd64.deb",
+    "SHA256": "aed1436db9a3e63b10d00c4ed16248b5c82b5dd2963a83a761f406af65eb4b49"
+  },
+  {
+    "Package": "libxcb-render-util0",
+    "Version": "0.3.9-1+b1",
+    "Filename": "pool/main/x/xcb-util-renderutil/libxcb-render-util0_0.3.9-1+b1_amd64.deb",
+    "SHA256": "be4b38a63e65c84e2f1322f044d05a9baa677e0f3dc68b742a0a109a3ff40ae9"
+  },
+  {
+    "Package": "libxcb-icccm4",
+    "Version": "0.4.1-1.1",
+    "Filename": "pool/main/x/xcb-util-wm/libxcb-icccm4_0.4.1-1.1_amd64.deb",
+    "SHA256": "f323194cb04cd4e5ae064fafec39db6dcf8a431cbd65a0bc53fa6c359862d8ff"
+  }
+]
