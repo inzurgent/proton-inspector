@@ -5,6 +5,7 @@ import os
 import struct
 from pathlib import Path
 
+ALL_NUMERIC = 'All numeric types'
 TYPES = {'int32': '<i', 'uint32': '<I', 'int64': '<q', 'float32': '<f', 'float64': '<d'}
 class IOVec(C.Structure):
     _fields_ = [('base', C.c_void_p), ('length', C.c_size_t)]
@@ -81,8 +82,19 @@ class Memory:
         return result
 
     def scan(self, kind, value, stop, progress, regions=None):
-        needle = pack(kind, value)
-        size = len(needle)
+        matches, skipped = self.scan_typed(kind, value, stop, progress, regions)
+        return {address: data for (address, _), data in matches.items()}, skipped
+
+    def scan_typed(self, kind, value, stop, progress, regions=None):
+        needles = {}
+        for candidate in TYPES if kind == ALL_NUMERIC else [kind]:
+            try:
+                needles[candidate] = pack(candidate, value)
+            except (ValueError, OverflowError, struct.error):
+                if kind != ALL_NUMERIC:
+                    raise
+        if not needles:
+            raise ValueError('Enter a number representable by at least one supported type.')
         matches = {}
         skipped = 0
         areas = self.regions() if regions is None else regions
@@ -101,13 +113,17 @@ class Memory:
                     skipped += length
                     done += length
                     continue
-                offset = data.find(needle)
-                while offset >= 0:
-                    if (address+offset) % size == 0:
-                        matches[address+offset] = needle
-                        if len(matches) > 250000:
-                            raise RuntimeError('More than 250,000 matches. Choose a less common initial value.')
-                    offset = data.find(needle, offset+1)
+                for candidate, needle in needles.items():
+                    size = len(needle)
+                    offset = data.find(needle)
+                    while offset >= 0:
+                        if stop.is_set():
+                            raise RuntimeError('Scan cancelled; previous results retained.')
+                        if (address+offset) % size == 0:
+                            matches[(address+offset, candidate)] = needle
+                            if len(matches) > 250000:
+                                raise RuntimeError('More than 250,000 matches. Choose a less common initial value.')
+                        offset = data.find(needle, offset+1)
                 done += length
                 progress(done, total)
         return matches, skipped
@@ -129,4 +145,23 @@ class Memory:
                     'increased': a > b, 'decreased': a < b}[mode]
             if keep:
                 result[address] = new
+        return result, 0
+
+    def refine_typed(self, previous, mode, value, stop):
+        result = {}
+        representable = False
+        for kind in TYPES:
+            group = {address: data for (address, candidate), data in previous.items() if candidate == kind}
+            if not group:
+                continue
+            if mode == 'exact':
+                try:
+                    pack(kind, value)
+                except (ValueError, OverflowError, struct.error):
+                    continue
+            representable = True
+            refined, _ = self.refine(kind, group, mode, value, stop)
+            result.update({(address, kind): data for address, data in refined.items()})
+        if mode == 'exact' and previous and not representable:
+            raise ValueError('Value cannot be represented by the remaining result types.')
         return result, 0

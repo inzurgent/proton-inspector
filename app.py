@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QThread, QTimer, Signal
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QComboBox, QLineEdit, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QTabWidget, QFileDialog, QInputDialog)
-from memory import Memory, processes, pack, unpack, TYPES
+from memory import Memory, processes, pack, unpack, TYPES, ALL_NUMERIC
 from address_book import load_book, save_book, LIMIT
 
 class Worker(QObject):
@@ -57,16 +57,17 @@ class Window(QMainWindow):
         self.attach_button = QPushButton('Attach')
         self.demo_button = QPushButton('Start demo')
         self.row(layout, self.targets, self.refresh_button, self.attach_button, self.demo_button)
-        self.kind = QComboBox(); self.kind.addItems(TYPES)
+        self.kind = QComboBox(); self.kind.addItems([ALL_NUMERIC, *TYPES])
         self.value = QLineEdit('123456789'); self.value.setPlaceholderText('Known value')
         self.mode = QComboBox(); self.mode.addItems(['exact', 'changed', 'unchanged', 'increased', 'decreased'])
         self.first = QPushButton('New scan'); self.next = QPushButton('Next scan')
         self.cancel = QPushButton('Cancel'); self.cancel.setEnabled(False)
         self.row(layout, self.kind, self.value, self.mode, self.first, self.next, self.cancel)
-        self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(['Address', 'Last scanned value', 'Frozen'])
+        self.table = QTableWidget(0, 4)
+        self.table.setHorizontalHeaderLabels(['Address', 'Type', 'Last scanned value', 'Frozen'])
         self.table.setColumnWidth(0, 200)
-        self.table.setColumnWidth(1, 220)
+        self.table.setColumnWidth(1, 110)
+        self.table.setColumnWidth(2, 220)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -181,8 +182,8 @@ class Window(QMainWindow):
         previous = self.results.copy()
         def execute(progress):
             if first:
-                return memory.scan(kind, value, self.stop, lambda n,t: progress.emit(f'Scanning {n//1048576} / {t//1048576} MiB'))
-            return memory.refine(kind, previous, mode, value, self.stop)
+                return memory.scan_typed(kind, value, self.stop, lambda n,t: progress.emit(f'Scanning {n//1048576} / {t//1048576} MiB'))
+            return memory.refine_typed(previous, mode, value, self.stop)
         self.busy(True)
         self.thread = QThread(self)
         self.worker = Worker(execute); self.worker.moveToThread(self.thread)
@@ -198,7 +199,7 @@ class Window(QMainWindow):
     def busy(self, busy):
         for widget in (self.process_search, self.targets, self.refresh_button, self.attach_button, self.demo_button,
                        self.first, self.next, self.write, self.freeze, self.keep, self.load_list): widget.setEnabled(not busy)
-        self.kind.setEnabled(not busy and not self.results)
+        self.kind.setEnabled(not busy)
         self.cancel.setEnabled(busy)
         self.attach_button.setEnabled(not busy and self.targets.count() > 0)
 
@@ -211,8 +212,8 @@ class Window(QMainWindow):
     def render(self):
         rows = list(self.results.items())[:2000]
         self.table.setRowCount(len(rows))
-        for row, (address, data) in enumerate(rows):
-            for col, text in enumerate((hex(address), str(unpack(self.kind.currentText(), data)), 'Yes' if address in self.frozen else '')):
+        for row, ((address, kind), data) in enumerate(rows):
+            for col, text in enumerate((hex(address), kind, str(unpack(kind, data)), 'Yes' if address in self.frozen else '')):
                 self.table.setItem(row, col, QTableWidgetItem(text))
 
     def keep_selected(self):
@@ -222,7 +223,7 @@ class Window(QMainWindow):
         entries = list(self.addresses)
         for row in rows:
             address = self.table.item(row, 0).text()
-            kind = self.kind.currentText()
+            kind = self.table.item(row, 1).text()
             if not any(e['address'] == address and e['type'] == kind for e in entries):
                 entries.append({'name': f'Address {address}', 'address': address, 'type': kind})
         if len(entries) > LIMIT:
@@ -295,7 +296,7 @@ class Window(QMainWindow):
                 entry = self.addresses[row]
                 address, kind = int(entry['address'], 16), entry['type']
             else:
-                address, kind = int(table.item(row, 0).text(), 16), self.kind.currentText()
+                address, kind = int(table.item(row, 0).text(), 16), table.item(row, 1).text()
             data = pack(kind, self.edit.text())
             self.memory.write(address, data)
             if freeze: self.frozen[address] = data

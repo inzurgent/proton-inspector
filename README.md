@@ -7,7 +7,7 @@ A lightweight Linux desktop memory scanner and editor for games running through 
 ## Features
 
 - Search running processes by name, command, or PID.
-- Scan known integer and floating-point values.
+- Scan all supported numeric types together, or choose one integer or floating-point type.
 - Narrow matches by exact value, changed, unchanged, increased, or decreased.
 - Edit values and freeze addresses with repeated writes.
 - Keep named addresses in a separate tab and save/load JSON lists.
@@ -52,6 +52,25 @@ cat /proc/sys/kernel/yama/ptrace_scope
 ```
 
 Yama mode 1 commonly prevents attaching to an independently launched game; the child-process demo can still work. Other access controls can also deny access. This prototype reports the denial and does not change permissions. A scoped game-launch/privileged-helper integration is still needed for those configurations. Do not run the whole GUI as root or grant capabilities to a general-purpose Python interpreter.
+
+## Scan all numeric types
+
+Choose **All numeric types** (the default) to search `int32`, `uint32`, `int64`,
+`float32`, and `float64` in one pass. The results table shows the type of each
+match. A location may appear more than once when its bytes match multiple
+types, such as signed and unsigned integers.
+
+Enter a known number, run **New scan**, change the value in the game, then use
+**Next scan** to narrow the results. Each result retains its numeric type for
+refinement, editing, freezing and saving. The type selector applies to new
+scans; changing it does not reinterpret existing results.
+
+Inputs that cannot be encoded in a particular type skip that type in combined
+scans. For example, `1.5` searches floating-point types; out-of-range integers
+are skipped for integer types that cannot hold them. Invalid input leaves prior
+results intact. “All” covers the five supported numeric types, not text, byte
+patterns, or unknown initial values. Choose a single type to reduce ambiguous
+matches. Float searches still compare the exact encoded value.
 
 ## Saved addresses
 
