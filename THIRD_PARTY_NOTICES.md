@@ -52,3 +52,12 @@ third-party components.
 The bundled libraries can be inspected, modified and replaced by extracting
 the AppImage; see [the packaging guide](packaging/README.md). AppImage build
 utilities are build-time tools, not application code relicensed under MIT.
+
+
+## Flatpak v0.1.1 distribution
+
+The Flatpak host launcher embeds the unchanged v0.1.0 AppImage; all AppImage
+dependency licenses and corresponding-source links above still apply. The
+launcher and packaging scripts are MIT licensed. The separately installed
+Freedesktop Platform runtime is provided through its Flatpak remote and retains
+its own licenses. It is not bundled into this repository's source archive.

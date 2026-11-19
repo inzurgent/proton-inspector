@@ -2,7 +2,7 @@
 
 A lightweight Linux desktop memory scanner and editor for games running through Wine/Proton. Built with Python and PySide6, with a workflow inspired by Cheat Engine.
 
-**Status:** early prototype. Basic operation has been reported working by the maintainer on Bazzite with **Probably Stolen**. Compatibility with other games and Linux configurations is not yet established. This is an independent project, not affiliated with Cheat Engine, Valve, or the Proton project.
+**Status:** early prototype. Basic operation and the v0.1.0 AppImage have been reported working by the maintainer on Bazzite with **Probably Stolen**. Compatibility with other games and Linux configurations is not yet established. This is an independent project, not affiliated with Cheat Engine, Valve, or the Proton project.
 
 ## Features
 
@@ -13,7 +13,7 @@ A lightweight Linux desktop memory scanner and editor for games running through 
 - Keep named addresses in a separate tab and save/load JSON lists.
 - Try the workflow using an included demo process.
 
-## Releases and AppImage download
+## Releases and downloads
 
 Download the **x86-64 AppImage** from [GitHub Releases](https://github.com/inzurgent/proton-inspector/releases).
 The first packaged release is **v0.1.0**, an experimental Linux desktop build.
@@ -36,6 +36,25 @@ uses the same Linux process permissions as the source version. See the
 [packaging guide](packaging/README.md) for build instructions, extraction,
 library replacement and platform limitations.
 
+### Flatpak (v0.1.1)
+
+Download `Proton-Inspector-0.1.1-x86_64.flatpak` from
+[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.1):
+
+```bash
+flatpak install --user ./Proton-Inspector-0.1.1-x86_64.flatpak
+flatpak run io.github.inzurgent.ProtonInspector
+```
+
+This package adds a desktop app entry and bundles the working v0.1.0 AppImage.
+It is a **host launcher**, not a sandboxed scanner: its declared host-command
+permission runs the application outside Flatpak's sandbox so it can inspect
+host games. Normal user privileges and Linux memory-access restrictions apply.
+It needs the Freedesktop Platform 25.08 runtime, which Flatpak can download.
+This is a standalone experimental bundle, not a Flathub listing or an automatic
+application-update channel. See the [Flatpak guide](packaging/flatpak/README.md)
+for permissions, building, testing and uninstalling.
+
 ## Requirements (running from source)
 
 - Linux desktop with Python 3, `venv`, and `pip`.
@@ -52,7 +71,7 @@ Extract/copy this folder somewhere writable. Run on the Bazzite host, alongside 
 bash run.sh
 ```
 
-Requires Python 3 with venv/pip, internet for first-time dependency installation, and a graphical desktop. The launcher installs PySide6 in the local `.venv`; it does not modify the base OS. The maintainer has reported a working Bazzite setup; automatic installation of missing host prerequisites is not included. A Flatpak/container deployment is not provided: process visibility and memory access across sandbox boundaries require additional integration.
+Requires Python 3 with venv/pip, internet for first-time dependency installation, and a graphical desktop. The launcher installs PySide6 in the local `.venv`; it does not modify the base OS. The maintainer has reported a working Bazzite setup; automatic installation of missing host prerequisites is not included. The separately provided Flatpak launcher runs the scanner on the host; a fully sandboxed scanner is not provided.
 
 ## Try the demo
 

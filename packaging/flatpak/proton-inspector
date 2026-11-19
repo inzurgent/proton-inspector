@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+# Flatpak supplies the host path of this exact installed app deployment.
+app_path=$(sed -n 's/^app-path=//p' /.flatpak-info)
+if [ -z "$app_path" ]; then
+    printf '%s\n' 'Cannot locate the installed Proton Inspector deployment.' >&2
+    exit 1
+fi
+# Host execution is intentional: a sandbox cannot inspect host game processes.
+# No elevation or ptrace policy changes are performed.
+exec /usr/bin/flatpak-spawn --host --watch-bus \
+    "$app_path/lib/proton-inspector/Proton-Inspector-0.1.0-x86_64.AppImage" \
+    --appimage-extract-and-run "$@"

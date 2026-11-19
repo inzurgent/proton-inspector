@@ -20,3 +20,4 @@ dist/
 *.json
 !packaging/debian-lock.json
 *.AppImage
+*.flatpak

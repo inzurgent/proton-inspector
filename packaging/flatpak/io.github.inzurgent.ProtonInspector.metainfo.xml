@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.inzurgent.ProtonInspector</id>
+  <name>Proton Inspector</name>
+  <summary>Scan and edit numeric values in Linux and Proton game processes</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="io.github.inzurgent"><name>inzurgent</name></developer>
+  <launchable type="desktop-id">io.github.inzurgent.ProtonInspector.desktop</launchable>
+  <description>
+    <p>A Linux desktop memory scanner with combined numeric searches, value editing, freezing and saved address lists.</p>
+    <p>This Flatpak is a host launcher. It uses host-command permission to run its bundled application outside the sandbox so it can inspect game processes. The scanner has your normal user privileges; it does not run as root or change Linux memory-access policies.</p>
+    <p>Experimental x86-64 package. Absolute saved addresses may change after restarting a game.</p>
+  </description>
+  <url type="homepage">https://github.com/inzurgent/proton-inspector</url>
+  <url type="bugtracker">https://github.com/inzurgent/proton-inspector/issues</url>
+  <url type="help">https://github.com/inzurgent/proton-inspector/blob/main/packaging/flatpak/README.md</url>
+  <content_rating type="oars-1.1"/>
+  <releases><release version="0.1.1" date="2026-11-19" type="development"><description><p>First Flatpak host-launcher package.</p></description></release></releases>
+</component>

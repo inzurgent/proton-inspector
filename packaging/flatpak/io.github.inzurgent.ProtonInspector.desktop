@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Proton Inspector
+Comment=Scan and edit numeric values in host Linux and Proton processes
+Exec=proton-inspector
+Icon=io.github.inzurgent.ProtonInspector
+Categories=Development;Utility;
+Terminal=false
+StartupWMClass=Proton Inspector
