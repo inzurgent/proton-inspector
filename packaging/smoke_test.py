@@ -16,6 +16,8 @@ try:
     w.show(); app.processEvents(); w.start_demo()
     address = w.demo_address
     low = address & ~4095
+    baseline, _ = w.memory.scan_unknown('int32', threading.Event(), lambda *_: None, [(low,low+4096)])
+    assert baseline[(address,'int32')] == pack('int32','123456789')
     results, skipped = w.memory.scan_typed(ALL_NUMERIC, '123456789', threading.Event(), lambda *_: None, [(low,low+4096)])
     assert (address,'int32') in results and skipped == 0
     w.scanned(({(address,'int32'):results[(address,'int32')]}, 0))

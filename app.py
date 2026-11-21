@@ -25,6 +25,7 @@ class Worker(QObject):
         except Exception as error:
             self.failed.emit(str(error))
         finally:
+            self.fn = None  # Release previous snapshot references after the job.
             self.done.emit()
 
 class Window(QMainWindow):
@@ -58,12 +59,16 @@ class Window(QMainWindow):
         self.attach_button = QPushButton('Attach')
         self.demo_button = QPushButton('Start demo')
         self.row(layout, self.targets, self.refresh_button, self.attach_button, self.demo_button)
+        self.initial = QComboBox(); self.initial.addItems(['Known value', 'Unknown initial value'])
+        self.row(layout, QLabel('New scan mode:'), self.initial)
+        self.initial.setToolTip('Unknown initial value captures every aligned numeric value without requiring a number.')
+        self.initial.currentTextChanged.connect(self.initial_changed)
         self.kind = QComboBox(); self.kind.addItems([ALL_NUMERIC, *TYPES])
-        self.value = QLineEdit('123456789'); self.value.setPlaceholderText('Known value')
+        self.value = QLineEdit('123456789'); self.value.setPlaceholderText('Value for exact searches only')
         self.mode = QComboBox(); self.mode.addItems(['exact', 'changed', 'unchanged', 'increased', 'decreased'])
         self.first = QPushButton('New scan'); self.next = QPushButton('Next scan')
         self.cancel = QPushButton('Cancel'); self.cancel.setEnabled(False)
-        self.row(layout, self.kind, self.value, self.mode, self.first, self.next, self.cancel)
+        self.row(layout, self.kind, self.value, QLabel('Next scan:'), self.mode, self.first, self.next, self.cancel)
         self.table = QTableWidget(0, 4)
         self.table.setHorizontalHeaderLabels(['Address', 'Type', 'Last scanned value', 'Frozen'])
         self.table.setColumnWidth(0, 200)
@@ -173,6 +178,11 @@ class Window(QMainWindow):
         self.kind.setCurrentText('int32'); self.value.setText('123456789')
         self.status.setText(f'Demo PID {self.demo.pid}: int32 value 123456789 at {self.demo_address:#x}. Scan, then edit this address.')
 
+    def initial_changed(self):
+        unknown = self.initial.currentText() == 'Unknown initial value'
+        self.first.setText('Capture baseline' if unknown else 'New scan')
+        if unknown: self.mode.setCurrentText('changed')
+
     def scan(self, first):
         if self.memory is None:
             self.error('Attach to a process first.'); return
@@ -180,8 +190,14 @@ class Window(QMainWindow):
             self.error('Run a new scan first.'); return
         self.stop.clear()
         memory, kind, value, mode = self.memory, self.kind.currentText(), self.value.text(), self.mode.currentText()
+        unknown = first and self.initial.currentText() == 'Unknown initial value'
+        if first and not unknown and not value.strip():
+            self.error('Enter a value, or select Unknown initial value to capture a baseline.'); return
+        self.capturing_unknown = unknown
         previous = self.results.copy()
         def execute(progress):
+            if unknown:
+                return memory.scan_unknown(kind, self.stop, lambda n,t: progress.emit(f'Capturing baseline: {n//1048576} / {t//1048576} MiB'))
             if first:
                 return memory.scan_typed(kind, value, self.stop, lambda n,t: progress.emit(f'Scanning {n//1048576} / {t//1048576} MiB'))
             return memory.refine_typed(previous, mode, value, self.stop, lambda n,t: progress.emit(f'Refining blocks: {n:,} / {t:,}'))
@@ -198,7 +214,7 @@ class Window(QMainWindow):
         self.thread.start()
 
     def busy(self, busy):
-        for widget in (self.process_search, self.targets, self.refresh_button, self.attach_button, self.demo_button,
+        for widget in (self.initial, self.process_search, self.targets, self.refresh_button, self.attach_button, self.demo_button,
                        self.first, self.next, self.write, self.freeze, self.keep, self.load_list): widget.setEnabled(not busy)
         self.kind.setEnabled(not busy)
         self.cancel.setEnabled(busy)
@@ -208,7 +224,8 @@ class Window(QMainWindow):
         self.results, skipped = result
         self.frozen.clear()
         self.render(); self.render_saved()
-        self.status.setText(f'{len(self.results):,} matches. Showing first 2,000. {skipped:,} bytes skipped due to unreadable/changing mappings.')
+        prefix = 'Baseline captured. Change something in the game, then use Next scan. ' if getattr(self, 'capturing_unknown', False) else ''
+        self.status.setText(prefix + f'{len(self.results):,} matches. Showing first 2,000. {skipped:,} bytes skipped due to unreadable/changing mappings.')
 
     def render(self):
         rows = list(islice(self.results.items(), 2000))

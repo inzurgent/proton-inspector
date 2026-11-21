@@ -2,7 +2,45 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 import zlib
+import os
+import tempfile
+from pathlib import Path
 import numpy as np
+
+class SnapshotStore:
+    """Private temporary disk storage, deleted when the last snapshot is released."""
+    LIMIT = 4*1024*1024*1024
+
+    def __init__(self):
+        cache = Path(os.environ.get('XDG_CACHE_HOME') or Path.home()/'.cache')/'proton-inspector'/'scans'
+        cache.mkdir(parents=True, exist_ok=True, mode=0o700)
+        self.file = tempfile.TemporaryFile(prefix='baseline-', dir=cache)
+        self.size = 0
+
+    def __del__(self):
+        if hasattr(self, "file"): self.file.close()
+
+    def append(self, data):
+        encoded = zlib.compress(data, 1)
+        if self.size+len(encoded) > self.LIMIT:
+            raise RuntimeError('Snapshot exceeds the 4 GiB temporary-file budget; previous results retained.')
+        offset = self.size
+        self.file.write(encoded)
+        self.file.flush()
+        self.size += len(encoded)
+        return SnapshotData(self, offset, len(encoded))
+
+@dataclass(frozen=True)
+class SnapshotData:
+    store: SnapshotStore
+    offset: int
+    length: int
+
+    def read(self):
+        encoded = os.pread(self.store.file.fileno(), self.length, self.offset)
+        if len(encoded) != self.length:
+            raise OSError('Could not read the complete scan baseline.')
+        return zlib.decompress(encoded)
 
 @dataclass(frozen=True)
 class Block:
@@ -13,7 +51,7 @@ class Block:
     size: int
     bits: bytes
     count: int
-    baseline: bytes
+    baseline: bytes | SnapshotData
     uniform: bool = True
 
     def mask(self):
@@ -21,13 +59,14 @@ class Block:
         return np.unpackbits(np.frombuffer(self.bits, dtype=np.uint8), count=n).astype(bool)
 
     def data(self):
+        if isinstance(self.baseline, SnapshotData): return self.baseline.read()
         return self.baseline if self.uniform else zlib.decompress(self.baseline)
 
 class ScanResults(Mapping):
     def __init__(self, blocks):
         self.blocks = tuple(blocks)
         self.count = sum(b.count for b in self.blocks)
-        self.storage_bytes = sum(len(b.bits)+len(b.baseline) for b in self.blocks)
+        self.storage_bytes = sum(len(b.bits)+(len(b.baseline) if isinstance(b.baseline, bytes) else 0) for b in self.blocks)
 
     def __len__(self): return self.count
 

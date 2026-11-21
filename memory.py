@@ -5,7 +5,7 @@ import os
 import struct
 import zlib
 import numpy as np
-from scan_results import Block, ScanResults
+from scan_results import Block, ScanResults, SnapshotStore
 from pathlib import Path
 
 ALL_NUMERIC = 'All numeric types'
@@ -137,6 +137,42 @@ class Memory:
                 progress(done, total)
         return ScanResults(blocks), skipped
 
+    def scan_unknown(self, kind, stop, progress, regions=None):
+        kinds = list(TYPES) if kind == ALL_NUMERIC else [kind]
+        for candidate in kinds:
+            if candidate not in TYPES: raise ValueError('Unknown numeric type.')
+        store = SnapshotStore()
+        blocks = []
+        storage = skipped = done = 0
+        areas = self.regions() if regions is None else regions
+        total = sum(high-low for low,high in areas)
+        for low,high in areas:
+            for address in range(low,high,1024*1024):
+                if stop.is_set():
+                    raise RuntimeError('Scan cancelled; previous results retained.')
+                length = min(1024*1024,high-address)
+                try: data = self.read(address,length)
+                except PermissionError: raise
+                except OSError:
+                    skipped += length
+                    done += length
+                    progress(done,total)
+                    continue
+                baseline = store.append(data)
+                for candidate in kinds:
+                    size = struct.calcsize(TYPES[candidate])
+                    offset = (-address)%size
+                    count = max(0,(length-offset)//size)
+                    if not count: continue
+                    bits = np.packbits(np.ones(count,dtype=bool)).tobytes()
+                    blocks.append(Block(address,length,candidate,offset,size,bits,count,baseline,False))
+                    storage += len(bits)
+                    if storage > 256*1024*1024:
+                        raise RuntimeError('Candidate masks exceed 256 MiB. Select one numeric type; previous results retained.')
+                done += length
+                progress(done,total)
+        return ScanResults(blocks),skipped
+
     def refine(self, kind, previous, mode, value, stop):
         target = pack(kind, value) if mode == 'exact' else None
         result = {}
@@ -190,12 +226,15 @@ class Memory:
         skipped = 0
         last_key = None
         current = None
+        snapshot_store = SnapshotStore()
+        shared_baseline = None
         for number, block in enumerate(previous.blocks):
             if stop.is_set():
                 raise RuntimeError('Scan cancelled; previous results retained.')
             if mode == 'exact' and block.kind not in targets: continue
             key = (block.address, block.length)
             if key != last_key:
+                shared_baseline = None
                 try: current = self.read(*key)
                 except PermissionError: raise
                 except OSError:
@@ -227,9 +266,13 @@ class Memory:
             if count:
                 bits = np.packbits(keep).tobytes()
                 uniform = mode == 'exact'
-                baseline = targets[block.kind] if uniform else zlib.compress(current, 1)
+                if uniform:
+                    baseline = targets[block.kind]
+                else:
+                    if shared_baseline is None: shared_baseline = snapshot_store.append(current)
+                    baseline = shared_baseline
                 blocks.append(Block(block.address,block.length,block.kind,block.offset,block.size,bits,count,baseline,uniform))
-                storage += len(bits)+len(baseline)
+                storage += len(bits)+(len(baseline) if isinstance(baseline, bytes) else 0)
                 if storage > 256*1024*1024:
                     raise RuntimeError('Scan snapshot exceeds 256 MiB. Narrow by an exact value or select one numeric type; previous results retained.')
             progress(number+1, len(previous.blocks))

@@ -13,7 +13,7 @@ Requires x86-64 Linux, Python 3.12+ (for safe tar extraction), `bash`, `readlink
 
 ```bash
 python3 packaging/build_appimage.py
-QT_QPA_PLATFORM=offscreen dist/Proton-Inspector-0.1.2-x86_64.AppImage --appimage-extract-and-run --self-test
+QT_QPA_PLATFORM=offscreen dist/Proton-Inspector-0.1.3-x86_64.AppImage --appimage-extract-and-run --self-test
 ```
 
 Use `--work-dir PATH` and `--output-dir PATH` to change build locations.
@@ -28,14 +28,14 @@ This is a repeatable recipe, not a claim of bit-for-bit reproducible output.
 ## Runtime and troubleshooting
 
 ```bash
-chmod +x Proton-Inspector-0.1.2-x86_64.AppImage
-./Proton-Inspector-0.1.2-x86_64.AppImage
+chmod +x Proton-Inspector-0.1.3-x86_64.AppImage
+./Proton-Inspector-0.1.3-x86_64.AppImage
 ```
 
 If FUSE mounting is unavailable, use `--appimage-extract-and-run`. Alternatively:
 
 ```bash
-./Proton-Inspector-0.1.2-x86_64.AppImage --appimage-extract
+./Proton-Inspector-0.1.3-x86_64.AppImage --appimage-extract
 ./squashfs-root/AppRun
 ```
 

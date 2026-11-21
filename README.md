@@ -16,18 +16,18 @@ A lightweight Linux desktop memory scanner and editor for games running through 
 ## Releases and downloads
 
 Download the **x86-64 AppImage** from [GitHub Releases](https://github.com/inzurgent/proton-inspector/releases).
-The current packaged release is **v0.1.2**, an experimental Linux desktop build.
+The current packaged release is **v0.1.3**, an experimental Linux desktop build.
 Python and Qt are included; no pip installation is needed.
 
 ```bash
-chmod +x Proton-Inspector-0.1.2-x86_64.AppImage
-./Proton-Inspector-0.1.2-x86_64.AppImage
+chmod +x Proton-Inspector-0.1.3-x86_64.AppImage
+./Proton-Inspector-0.1.3-x86_64.AppImage
 ```
 
 If your system cannot mount AppImages through FUSE:
 
 ```bash
-./Proton-Inspector-0.1.2-x86_64.AppImage --appimage-extract-and-run
+./Proton-Inspector-0.1.3-x86_64.AppImage --appimage-extract-and-run
 ```
 
 A `SHA256SUMS` file accompanies the release. Run `sha256sum -c SHA256SUMS`
@@ -36,17 +36,17 @@ uses the same Linux process permissions as the source version. See the
 [packaging guide](packaging/README.md) for build instructions, extraction,
 library replacement and platform limitations.
 
-### Flatpak (v0.1.2)
+### Flatpak (v0.1.3)
 
-Download `Proton-Inspector-0.1.2-x86_64.flatpak` from
-[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.2):
+Download `Proton-Inspector-0.1.3-x86_64.flatpak` from
+[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.3):
 
 ```bash
-flatpak install --user ./Proton-Inspector-0.1.2-x86_64.flatpak
+flatpak install --user ./Proton-Inspector-0.1.3-x86_64.flatpak
 flatpak run io.github.inzurgent.ProtonInspector
 ```
 
-This package adds a desktop app entry and bundles the v0.1.2 AppImage.
+This package adds a desktop app entry and bundles the v0.1.3 AppImage.
 It is a **host launcher**, not a sandboxed scanner: its declared host-command
 permission runs the application outside Flatpak's sandbox so it can inspect
 host games. Normal user privileges and Linux memory-access restrictions apply.
@@ -85,7 +85,7 @@ Results show the last scan baseline, not live values. Writes intentionally prese
 
 ## Try a game
 
-Launch the game normally and refresh the process list. Use the search box to filter instantly by name, command, or PID (for example, `stolen`). Search is case-insensitive; multiple words must all match. Clear the search to show all processes. Select the game’s actual `.exe` process rather than Steam or wineserver. Attach, choose the numeric type, and search a known value. Change it in the game and use **Next scan** to narrow matches. A new scan always uses exact matching, regardless of the refinement dropdown.
+Launch the game normally and refresh the process list. Use the search box to filter instantly by name, command, or PID (for example, `stolen`). Search is case-insensitive; multiple words must all match. Clear the search to show all processes. Select the game’s actual `.exe` process rather than Steam or wineserver. Attach, choose the numeric type, and search a known value. Change it in the game and use **Next scan** to narrow matches. Known-value New scan uses exact matching; Unknown initial value captures a baseline. The Next scan dropdown controls refinement only.
 
 Linux permission checks apply even for same-user processes. Read-only diagnostics:
 
@@ -109,6 +109,33 @@ per match. A regression test scans 4,194,304 typed candidates and narrows them
 after a value change. This does not establish the actual perk-point layout of
 any particular game.
 
+## Unknown initial value (v0.1.3)
+
+1. Attach to the game and select **Unknown initial value** under **New scan mode**.
+2. Choose a numeric type (start with `int32`) or **All numeric types**.
+3. Leave the value field blank and click **Capture baseline**.
+4. Change something in the game, such as selecting a starting perk.
+5. Choose **changed** and click **Next scan**. Use **unchanged** while leaving
+   the relevant game state alone to remove unrelated changing values.
+6. Repeat. **increased** and **decreased** compare each value numerically with
+   its last successful scan. Switch to **exact** and enter a number when useful.
+
+Do not click Capture baseline again between refinements: it starts over.
+The value field is used only for known-value initial scans and exact refinement.
+The baseline captures readable/writable mappings and naturally aligned values;
+it is not an atomic snapshot of the running game.
+
+Baselines are compressed into private temporary files under
+`$XDG_CACHE_HOME/proton-inspector/scans` (normally `~/.cache/proton-inspector/scans`).
+Numeric types share the same captured chunk. Files are closed and removed when
+no scan uses them, including when replacing a scan or closing the app. A scan
+has a 4 GiB compressed-baseline budget and 256 MiB candidate-mask budget;
+refinement can temporarily retain both old and new snapshots. Disk errors,
+cancellation and budget errors leave previous results available.
+
+This finds memory that changes with gameplay; it does not establish that the
+remaining values control perk points or bypass the game's validation.
+
 ## Scan all numeric types
 
 Choose **All numeric types** (the default) to search `int32`, `uint32`, `int64`,
@@ -124,8 +151,8 @@ scans; changing it does not reinterpret existing results.
 Inputs that cannot be encoded in a particular type skip that type in combined
 scans. For example, `1.5` searches floating-point types; out-of-range integers
 are skipped for integer types that cannot hold them. Invalid input leaves prior
-results intact. “All” covers the five supported numeric types, not text, byte
-patterns, or unknown initial values. Choose a single type to reduce ambiguous
+results intact. “All” covers the five supported numeric types, not text or byte
+patterns. Unknown baselines are selected separately under New scan mode. Choose a single type to reduce ambiguous
 matches. Float searches still compare the exact encoded value.
 
 ## Saved addresses
@@ -144,8 +171,8 @@ Addresses are absolute, not pointers: restarting the game or changing scenes may
 - Exact first scan; exact, changed, unchanged, increased and decreased refinement.
 - Naturally aligned values in readable/writable mappings only. Floating point exact searches compare encoded bytes.
 - First scans run in a background thread with cancellation; partial results are discarded on cancellation.
-- Compact candidate bitmaps support millions of matches; only the first 2,000 are displayed. No matches are discarded just because they are not displayed. No unknown-initial-value scanning.
-- Scan snapshots have a 256 MiB storage budget instead of a fixed match-count cap. An over-budget scan reports an error and retains the previous results. Changed-value snapshots may use more storage than exact-value snapshots.
+- Compact candidate bitmaps support millions of matches; only the first 2,000 are displayed. No matches are discarded just because they are not displayed. Unknown-initial-value baselines are supported.
+- Candidate masks and in-memory values have a 256 MiB budget; compressed temporary baselines have a separate 4 GiB budget per scan. An over-budget scan reports an error and retains the previous results.
 - Unreadable chunks are skipped and counted. A skipped chunk may contain valid candidates; scans are not atomic snapshots of a running game.
 - No pointer scanner, overlay, disassembler, scripting, Cheat Engine table import, or anti-cheat integration.
 - Freezes are temporary address writes; they cannot track an allocation that moves or is reused inside the same process.
