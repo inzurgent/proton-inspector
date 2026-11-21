@@ -16,18 +16,18 @@ A lightweight Linux desktop memory scanner and editor for games running through 
 ## Releases and downloads
 
 Download the **x86-64 AppImage** from [GitHub Releases](https://github.com/inzurgent/proton-inspector/releases).
-The current packaged release is **v0.1.4**, an experimental Linux desktop build.
+The current packaged release is **v0.1.5**, an experimental Linux desktop build.
 Python and Qt are included; no pip installation is needed.
 
 ```bash
-chmod +x Proton-Inspector-0.1.4-x86_64.AppImage
-./Proton-Inspector-0.1.4-x86_64.AppImage
+chmod +x Proton-Inspector-0.1.5-x86_64.AppImage
+./Proton-Inspector-0.1.5-x86_64.AppImage
 ```
 
 If your system cannot mount AppImages through FUSE:
 
 ```bash
-./Proton-Inspector-0.1.4-x86_64.AppImage --appimage-extract-and-run
+./Proton-Inspector-0.1.5-x86_64.AppImage --appimage-extract-and-run
 ```
 
 A `SHA256SUMS` file accompanies the release. Run `sha256sum -c SHA256SUMS`
@@ -36,17 +36,17 @@ uses the same Linux process permissions as the source version. See the
 [packaging guide](packaging/README.md) for build instructions, extraction,
 library replacement and platform limitations.
 
-### Flatpak (v0.1.4)
+### Flatpak (v0.1.5)
 
-Download `Proton-Inspector-0.1.4-x86_64.flatpak` from
-[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.4):
+Download `Proton-Inspector-0.1.5-x86_64.flatpak` from
+[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.5):
 
 ```bash
-flatpak install --user ./Proton-Inspector-0.1.4-x86_64.flatpak
+flatpak install --user ./Proton-Inspector-0.1.5-x86_64.flatpak
 flatpak run io.github.inzurgent.ProtonInspector
 ```
 
-This package adds a desktop app entry and bundles the v0.1.4 AppImage.
+This package adds a desktop app entry and bundles the v0.1.5 AppImage.
 It is a **host launcher**, not a sandboxed scanner: its declared host-command
 permission runs the application outside Flatpak's sandbox so it can inspect
 host games. Normal user privileges and Linux memory-access restrictions apply.
@@ -109,7 +109,7 @@ per match. A regression test scans 4,194,304 typed candidates and narrows them
 after a value change. This does not establish the actual perk-point layout of
 any particular game.
 
-## Unknown initial value (v0.1.4)
+## Unknown initial value (v0.1.3)
 
 1. Attach to the game and select **Unknown initial value** under **New scan mode**.
 2. Choose a numeric type (start with `int32`) or **All numeric types**.
@@ -239,8 +239,8 @@ requires restoring first. This is a reversible on-disk patch, not a live change
 or a mod-loader plugin. The app never downloads or distributes game code.
 
 Validated against the locally installed assembly on a temporary copy: both
-budget constants change and restoration is byte-for-byte exact. In-game
-behavior still requires testing after restart.
+budget constants change and restoration is byte-for-byte exact. The user confirmed both the perk budget and slot limit working in-game on
+2026-11-21. Other game versions still require validation.
 
 ### Pasting paths in the file picker (v0.1.4.2)
 
