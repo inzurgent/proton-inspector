@@ -223,11 +223,11 @@ The supported `NewGamePerksUI` calculates its available balance from a starting
 budget of 3 minus the selected perks' total cost. It also checks that budget
 when continuing. The patch updates both sites together, after checking their
 original instruction patterns. It supports a **total budget of 3–8**, preserving
-instruction lengths and branch offsets. The perk-slot limit is unchanged.
+instruction lengths and branch offsets. In v0.1.5, the base perk-slot limit is separately configurable from 4 to 8.
 
 1. Close Probably Stolen.
 2. Open its `Probably Stolen_Data/Managed/Assembly-CSharp.dll` in the Mono tab.
-3. Select the budget and choose **Apply perk-budget patch…**.
+3. Select the budget and choose **Apply perk settings…**.
 4. Confirm the file and change, then launch the game.
 
 The original DLL and a checksum record are stored beside the DLL. Choose
@@ -248,3 +248,17 @@ Click **Open managed DLL…**, then click the **Look in** location field at the 
 of the file picker. Paste a folder path and press Enter to navigate, or paste a
 full DLL path and press Enter to open it. Quoted paths, `~/` paths and local
 `file://` URLs work too. The Mono tab retains its original layout.
+
+### Perk slots (v0.1.5)
+
+Select **Base perk slots** (4–8) alongside the point budget (3–8), then apply
+both with **Apply perk settings…** while the game is closed. Set budget to 3
+for a slots-only change, or slots to 4 for a points-only change. The game adds
+any selected perks' slot modifiers on top of this base. The counter and Continue
+validation both use the patched slot calculation. Incompatible perks still
+remain incompatible.
+
+If a previous patch is installed, use **Restore original…** first, then apply
+both desired settings together. A single restore undoes both changes, and older
+point-only backups remain restorable. No game files are modified just by
+installing or opening Proton Inspector.

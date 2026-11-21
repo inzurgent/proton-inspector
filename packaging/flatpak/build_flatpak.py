@@ -7,8 +7,8 @@ import shutil
 import subprocess
 
 APP_ID='io.github.inzurgent.ProtonInspector'
-IMAGE='Proton-Inspector-0.1.4.3-x86_64.AppImage'
-IMAGE_SHA256='ecbf532fc9225964d53df333abf258a0258d7cec15709c6d2659ea531b7db556'
+IMAGE='Proton-Inspector-0.1.5-x86_64.AppImage'
+IMAGE_SHA256='d87d8831e075f8477c4d80cef633689ceb1531fdb72d71a7a3771e47070ff76c'
 HERE=Path(__file__).resolve().parent
 
 def run(*args): subprocess.run([str(x) for x in args],check=True)
@@ -20,7 +20,7 @@ def main():
     parser.add_argument('--output-dir',type=Path,default=HERE.parents[1]/'dist')
     args=parser.parse_args()
     if hashlib.sha256(args.appimage.read_bytes()).hexdigest()!=IMAGE_SHA256:
-        raise SystemExit('AppImage checksum differs from the verified v0.1.4.3 release. Review before updating the recipe.')
+        raise SystemExit('AppImage checksum differs from the verified v0.1.5 release. Review before updating the recipe.')
     work=args.work_dir.resolve(); output=args.output_dir.resolve()
     app=work/'app'; repo=work/'repo'
     work.mkdir(parents=True,exist_ok=True); output.mkdir(parents=True,exist_ok=True)
@@ -42,7 +42,7 @@ def main():
         shutil.copy2(source,files/'share/doc'/APP_ID/source.name)
     run('flatpak','build-finish','--command=proton-inspector','--talk-name=org.freedesktop.Flatpak',app)
     run('flatpak','build-export',repo,app,'stable')
-    target=output/'Proton-Inspector-0.1.4.3-x86_64.flatpak'
+    target=output/'Proton-Inspector-0.1.5-x86_64.flatpak'
     run('flatpak','build-bundle',repo,target,APP_ID,'stable','--runtime-repo=https://flathub.org/repo/flathub.flatpakrepo')
     print(target)
 

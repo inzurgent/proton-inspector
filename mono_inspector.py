@@ -81,11 +81,32 @@ class Assembly:
         return sites
 
 
-def patch_bytes(assembly, budget):
+    def slot_site(self):
+        types = [t for t in self.classes if str(t.TypeName)=='NewGamePerksUI']
+        if len(types)!=1: raise ValueError('Unsupported Probably Stolen perk screen.')
+        methods = {str(m.row.Name):m.row for m in types[0].MethodList}
+        if 'MaxPerkCount' not in methods: raise ValueError('Unsupported game version: missing MaxPerkCount.')
+        method = methods['MaxPerkCount']; instructions = self.body(method).instructions
+        if ([i.opcode.name for i in instructions[:3]] != ['ldc.i4.4','stloc.0','call']
+                or self.resolve(instructions[2].operand) != 'NewGamePerksUI.get_SelectedPerks'
+                or not any(i.opcode.name=='ldfld' and self.resolve(i.operand)=='maxSlot' for i in instructions)):
+            raise ValueError('Unsupported or modified game version: MaxPerkCount does not match original code.')
+        # The same function must drive both the counter and the Continue gate.
+        for name in ('CanStart','RefreshCounters'):
+            if name not in methods or not any(i.opcode.name=='call' and self.resolve(i.operand)=='NewGamePerksUI.MaxPerkCount'
+                                               for i in self.body(methods[name]).instructions):
+                raise ValueError('Unsupported game version: '+name+' does not use MaxPerkCount.')
+        return self.pe.get_offset_from_rva(method.Rva)+instructions[0].offset
+
+
+def patch_bytes(assembly, budget, slots=None):
     if isinstance(budget, bool) or not isinstance(budget, int) or not 3 <= budget <= 8:
         raise ValueError('This patch supports a total starting budget from 3 to 8.')
+    if slots is not None and (isinstance(slots, bool) or not isinstance(slots, int) or not 4 <= slots <= 8):
+        raise ValueError('This patch supports 4 to 8 base perk slots.')
     data = bytearray(assembly.data)
     for offset in assembly.budget_sites(): data[offset] = 0x16 + budget
+    if slots is not None: data[assembly.slot_site()] = 0x16 + slots
     return bytes(data)
 
 
@@ -117,18 +138,18 @@ def backup_paths(path):
     return Path(str(path)+'.proton-inspector-original'), Path(str(path)+'.proton-inspector-patch.json')
 
 
-def apply_budget(path, budget):
+def apply_budget(path, budget, slots=None):
     path = Path(path).resolve()
     if game_running(path): raise ValueError('Close Probably Stolen before applying or restoring its patch.')
     backup, record = backup_paths(path)
-    if backup.exists() or record.exists(): raise ValueError('A backup already exists. Restore the original before applying another budget.')
+    if backup.exists() or record.exists(): raise ValueError('A backup already exists. Restore the original before applying another perk patch.')
     assembly = Assembly(path)
-    patched = patch_bytes(assembly,budget)
-    if patched == assembly.data: raise ValueError('3 is already the original budget; no patch is needed.')
+    patched = patch_bytes(assembly,budget,slots)
+    if patched == assembly.data: raise ValueError('The selected settings already match the original; no patch is needed.')
     # Exclusive backup creation; never overwrite an earlier original.
     with backup.open('xb') as f:
         f.write(assembly.data); f.flush(); os.fsync(f.fileno())
-    atomic_write(record,json.dumps({'original':digest(assembly.data),'patched':digest(patched),'budget':budget},indent=2).encode())
+    atomic_write(record,json.dumps({'original':digest(assembly.data),'patched':digest(patched),'budget':budget,'slots':slots},indent=2).encode())
     if path.read_bytes()!=assembly.data: raise ValueError('Game file changed during preparation; patch was not applied.')
     atomic_write(path,patched)
 

@@ -88,10 +88,13 @@ class MonoPanel(QWidget):
         row = QHBoxLayout(); row.addWidget(QLabel('Probably Stolen starting budget:'))
         self.budget = QSpinBox(); self.budget.setRange(3,8); self.budget.setValue(8)
         row.addWidget(self.budget)
-        self.apply = QPushButton('Apply perk-budget patch…'); self.restore = QPushButton('Restore original…')
+        row.addWidget(QLabel('Base perk slots:'))
+        self.slots = QSpinBox(); self.slots.setRange(4,8); self.slots.setValue(8)
+        row.addWidget(self.slots)
+        self.apply = QPushButton('Apply perk settings…'); self.restore = QPushButton('Restore original…')
         self.apply.setEnabled(False); self.restore.setEnabled(False)
         row.addWidget(self.apply); row.addWidget(self.restore); layout.addLayout(row)
-        self.info = QLabel('Patch requires closing the game. Changes the total budget (3–8), not the perk-slot limit. '
+        self.info = QLabel('Patch requires closing the game. Changes total budget (3–8) and base slots (4–8). Perk-specific slot bonuses still apply. '
                            'A verified original backup is saved beside the DLL. Game updates may replace the patch.')
         self.info.setWordWrap(True); layout.addWidget(self.info)
         self.open_button.clicked.connect(self.choose)
@@ -122,13 +125,16 @@ class MonoPanel(QWidget):
             QMessageBox.warning(self,'Cannot open assembly',str(error)); return
         self.assembly=assembly; self.path_label.setText(str(assembly.path)); self.filter()
         try:
-            assembly.budget_sites(); self.apply.setEnabled(True)
+            assembly.budget_sites(); assembly.slot_site(); self.apply.setEnabled(True)
             self.info.setText('Supported Probably Stolen perk screen found. Close the game before patching. '
-                              'Budget 3–8; both the displayed balance and Continue validation are updated. Perk slots remain unchanged.')
+                              'Budget 3–8; base slots 4–8. Counters and Continue validation use the new settings. Perk slot bonuses still apply.')
         except Exception as error:
             self.apply.setEnabled(False); self.info.setText(str(error))
         backup,record=backup_paths(assembly.path)
         self.restore.setEnabled(backup.exists() and record.exists())
+        if self.restore.isEnabled():
+            self.apply.setEnabled(False)
+            self.info.setText('An existing patch backup was found. Close the game and Restore original first, then apply your new point and slot settings together.')
 
     def filter(self):
         self.classes.clear(); self.visible_classes=[]
@@ -148,13 +154,13 @@ class MonoPanel(QWidget):
 
     def apply_patch(self):
         if not self.assembly: return
-        text=(f'Set the total starting perk budget to {self.budget.value()}?\n\n'
+        text=(f'Set the starting budget to {self.budget.value()} and base perk slots to {self.slots.value()}?\n\n'
               f'File: {self.assembly.path}\n\nClose the game first. The original is backed up beside this file. '
-              'Use Restore original to undo. The perk-slot limit is unchanged.')
+              'Use Restore original to undo both settings. Perk-specific slot bonuses still apply.')
         if QMessageBox.question(self,'Apply reversible game patch',text)!=QMessageBox.StandardButton.Yes: return
         try:
-            apply_budget(self.assembly.path,self.budget.value()); self.load(self.assembly.path)
-            self.info.setText('Patch applied. Launch the game to use the new budget. Restore original is available below.')
+            apply_budget(self.assembly.path,self.budget.value(),self.slots.value()); self.load(self.assembly.path)
+            self.info.setText('Patch applied. Launch the game to use the new perk settings. Restore original is available below.')
         except Exception as error: QMessageBox.warning(self,'Patch not applied',str(error))
 
     def restore_patch(self):
@@ -162,5 +168,5 @@ class MonoPanel(QWidget):
         if QMessageBox.question(self,'Restore original','Restore the verified original game DLL? Close the game first.')!=QMessageBox.StandardButton.Yes: return
         try:
             restore_budget(self.assembly.path); self.load(self.assembly.path)
-            self.info.setText('Original restored. Launch the game to use its original starting budget.')
+            self.info.setText('Original restored. Launch the game to use its original perk settings.')
         except Exception as error: QMessageBox.warning(self,'Restore failed',str(error))
