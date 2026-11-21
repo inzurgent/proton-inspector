@@ -1,6 +1,6 @@
 """Unity/Mono assembly browser with an optional, reversible game-specific patch."""
 from pathlib import Path
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSettings, QUrl
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QLineEdit, QListWidget, QPlainTextEdit, QSplitter, QFileDialog, QMessageBox, QSpinBox)
 from mono_inspector import Assembly, apply_budget, restore_budget, backup_paths
@@ -15,10 +15,17 @@ class MonoPanel(QWidget):
         note = QLabel('Assembly inspection: browse Unity/Mono classes, fields and method IL. '
                       'This reads game files; it does not inspect live objects or invoke methods. IL2CPP is not supported.')
         note.setWordWrap(True); layout.addWidget(note)
-        row = QHBoxLayout(); self.open_button = QPushButton('Open managed DLL…')
-        self.path_label = QLabel('Choose <game>_Data/Managed/Assembly-CSharp.dll')
-        self.path_label.setWordWrap(True)
-        row.addWidget(self.open_button); row.addWidget(self.path_label,1); layout.addLayout(row)
+        self.settings = QSettings('ProtonInspector', 'ProtonInspector')
+        row = QHBoxLayout()
+        self.path_edit = QLineEdit(str(self.settings.value('mono/lastAssembly', '')))
+        self.path_edit.setPlaceholderText('Paste the full path to Assembly-CSharp.dll, then press Enter')
+        self.path_edit.setClearButtonEnabled(True)
+        self.open_button = QPushButton('Open DLL')
+        self.browse_button = QPushButton('Browse…')
+        row.addWidget(self.path_edit,1); row.addWidget(self.open_button); row.addWidget(self.browse_button)
+        layout.addLayout(row)
+        self.path_label = QLabel('No assembly loaded.')
+        self.path_label.setWordWrap(True); layout.addWidget(self.path_label)
         self.search = QLineEdit(); self.search.setPlaceholderText('Search classes, field names or method names…')
         layout.addWidget(self.search)
         splitter = QSplitter(); self.classes = QListWidget(); self.details = QPlainTextEdit()
@@ -33,15 +40,36 @@ class MonoPanel(QWidget):
         self.info = QLabel('Patch requires closing the game. Changes the total budget (3–8), not the perk-slot limit. '
                            'A verified original backup is saved beside the DLL. Game updates may replace the patch.')
         self.info.setWordWrap(True); layout.addWidget(self.info)
-        self.open_button.clicked.connect(self.choose)
+        self.open_button.clicked.connect(self.open_path)
+        self.path_edit.returnPressed.connect(self.open_path)
+        self.browse_button.clicked.connect(self.choose)
         self.search.textChanged.connect(self.filter)
         self.classes.currentRowChanged.connect(self.show_class)
         self.apply.clicked.connect(self.apply_patch); self.restore.clicked.connect(self.restore_patch)
         self.visible_classes = []
 
+    def entered_path(self):
+        text = self.path_edit.text().strip()
+        if len(text)>1 and text[0] == text[-1] and text[0] in ('"', "'"):
+            text = text[1:-1]
+        if text.startswith('file:'):
+            url = QUrl(text)
+            if not url.isLocalFile() or url.host() not in ('', 'localhost'):
+                raise ValueError('Use a local file path.')
+            text = url.toLocalFile()
+        if not text: raise ValueError('Paste the full path to a managed DLL first.')
+        return str(Path(text).expanduser())
+
+    def open_path(self):
+        try: path = self.entered_path()
+        except ValueError as error:
+            QMessageBox.warning(self, 'Cannot open assembly', str(error)); return
+        self.load(path)
+
     def choose(self):
-        initial = str(Path.home())
-        if self.window.memory:
+        try: initial = self.entered_path()
+        except ValueError: initial = str(Path.home())
+        if not self.path_edit.text().strip() and self.window.memory:
             try:
                 for line in Path(f'/proc/{self.window.memory.pid}/maps').read_text().splitlines():
                     parts = line.split(maxsplit=5)
@@ -57,7 +85,10 @@ class MonoPanel(QWidget):
             assembly=Assembly(path)
         except Exception as error:
             QMessageBox.warning(self,'Cannot open assembly',str(error)); return
-        self.assembly=assembly; self.path_label.setText(str(assembly.path)); self.filter()
+        self.assembly=assembly
+        self.path_edit.setText(str(assembly.path))
+        self.settings.setValue('mono/lastAssembly', str(assembly.path))
+        self.path_label.setText('Loaded: '+str(assembly.path)); self.filter()
         try:
             assembly.budget_sites(); self.apply.setEnabled(True)
             self.info.setText('Supported Probably Stolen perk screen found. Close the game before patching. '

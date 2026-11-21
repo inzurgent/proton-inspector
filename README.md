@@ -241,3 +241,11 @@ or a mod-loader plugin. The app never downloads or distributes game code.
 Validated against the locally installed assembly on a temporary copy: both
 budget constants change and restoration is byte-for-byte exact. In-game
 behavior still requires testing after restart.
+
+### Pasting assembly paths (v0.1.4.1)
+
+The Unity / Mono tab accepts a pasted DLL path. Press Enter or click **Open DLL**.
+Quoted paths, `~/` paths and local `file://` URLs are accepted; **Browse…** is
+still available. The last successfully opened path is remembered across launches,
+without loading automatically. The **Loaded:** line identifies the assembly used
+by the inspector and patch buttons, even if the path box is subsequently edited.
