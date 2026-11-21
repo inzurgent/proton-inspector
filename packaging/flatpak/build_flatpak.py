@@ -42,7 +42,7 @@ def main():
         shutil.copy2(source,files/'share/doc'/APP_ID/source.name)
     run('flatpak','build-finish','--command=proton-inspector','--talk-name=org.freedesktop.Flatpak',app)
     run('flatpak','build-export',repo,app,'stable')
-    target=output/'Proton-Inspector-0.1.3-x86_64.flatpak'
+    target=output/'Proton-Inspector-0.1.3.1-x86_64.flatpak'
     run('flatpak','build-bundle',repo,target,APP_ID,'stable','--runtime-repo=https://flathub.org/repo/flathub.flatpakrepo')
     print(target)
 

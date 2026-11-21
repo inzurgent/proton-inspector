@@ -7,10 +7,10 @@ AppImage on the host using `flatpak-spawn --host`.
 
 ## Install and run
 
-Download `Proton-Inspector-0.1.3-x86_64.flatpak` from [Releases](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.3), then:
+Download `Proton-Inspector-0.1.3.1-x86_64.flatpak` from the package build output, then:
 
 ```bash
-flatpak install --user ./Proton-Inspector-0.1.3-x86_64.flatpak
+flatpak install --user ./Proton-Inspector-0.1.3.1-x86_64.flatpak
 flatpak run io.github.inzurgent.ProtonInspector
 ```
 
@@ -66,6 +66,17 @@ its MIT application license, dependency licenses and corresponding-source
 links remain applicable. See [third-party notices](../../THIRD_PARTY_NOTICES.md).
 
 ## Uninstall
+
+On KDE/Bazzite, right-click Proton Inspector in the application menu and choose
+**Uninstall Proton Inspector**. This opens Konsole with Flatpak's interactive
+confirmation prompt for the per-user installation. Answer `n` to cancel.
+The action requires Konsole on the host and does not open Bazaar. KDE may also
+show its own software-manager action; this custom action is separate.
+
+This action targets `--user`, matching the installation instructions above.
+For a system-wide installation, run the command below with `--system` instead.
+No `--delete-data` or automatic confirmation option is used.
+
 
 ```bash
 flatpak uninstall --user io.github.inzurgent.ProtonInspector

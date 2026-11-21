@@ -1,5 +1,11 @@
 #!/bin/sh
 set -eu
+# Keep removal interactive and separate from the scanner. Do not use --watch-bus:
+# the terminal must survive removal of this launcher deployment.
+if [ "${1:-}" = "--uninstall" ]; then
+    exec /usr/bin/flatpak-spawn --host konsole --separate -e \
+        flatpak uninstall --user io.github.inzurgent.ProtonInspector
+fi
 # Flatpak supplies the host path of this exact installed app deployment.
 app_path=$(sed -n 's/^app-path=//p' /.flatpak-info)
 if [ -z "$app_path" ]; then

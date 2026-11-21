@@ -16,5 +16,5 @@
   <url type="bugtracker">https://github.com/inzurgent/proton-inspector/issues</url>
   <url type="help">https://github.com/inzurgent/proton-inspector/blob/main/packaging/flatpak/README.md</url>
   <content_rating type="oars-1.1"/>
-  <releases><release version="0.1.3" date="2026-11-21" type="development"><description><p>First Flatpak host-launcher package.</p></description></release></releases>
+  <releases><release version="0.1.3.1" date="2026-11-21" type="development"><description><p>Add a KDE launcher action for interactive per-user uninstallation.</p></description></release></releases>
 </component>

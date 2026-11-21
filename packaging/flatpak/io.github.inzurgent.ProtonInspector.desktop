@@ -7,3 +7,9 @@ Icon=io.github.inzurgent.ProtonInspector
 Categories=Development;Utility;
 Terminal=false
 StartupWMClass=Proton Inspector
+Actions=Uninstall;
+
+[Desktop Action Uninstall]
+Name=Uninstall Proton Inspector
+Icon=edit-delete
+Exec=proton-inspector --uninstall
