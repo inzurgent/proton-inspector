@@ -16,18 +16,18 @@ A lightweight Linux desktop memory scanner and editor for games running through 
 ## Releases and downloads
 
 Download the **x86-64 AppImage** from [GitHub Releases](https://github.com/inzurgent/proton-inspector/releases).
-The first packaged release is **v0.1.0**, an experimental Linux desktop build.
+The current packaged release is **v0.1.2**, an experimental Linux desktop build.
 Python and Qt are included; no pip installation is needed.
 
 ```bash
-chmod +x Proton-Inspector-0.1.0-x86_64.AppImage
-./Proton-Inspector-0.1.0-x86_64.AppImage
+chmod +x Proton-Inspector-0.1.2-x86_64.AppImage
+./Proton-Inspector-0.1.2-x86_64.AppImage
 ```
 
 If your system cannot mount AppImages through FUSE:
 
 ```bash
-./Proton-Inspector-0.1.0-x86_64.AppImage --appimage-extract-and-run
+./Proton-Inspector-0.1.2-x86_64.AppImage --appimage-extract-and-run
 ```
 
 A `SHA256SUMS` file accompanies the release. Run `sha256sum -c SHA256SUMS`
@@ -36,17 +36,17 @@ uses the same Linux process permissions as the source version. See the
 [packaging guide](packaging/README.md) for build instructions, extraction,
 library replacement and platform limitations.
 
-### Flatpak (v0.1.1)
+### Flatpak (v0.1.2)
 
-Download `Proton-Inspector-0.1.1-x86_64.flatpak` from
-[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.1):
+Download `Proton-Inspector-0.1.2-x86_64.flatpak` from
+[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.2):
 
 ```bash
-flatpak install --user ./Proton-Inspector-0.1.1-x86_64.flatpak
+flatpak install --user ./Proton-Inspector-0.1.2-x86_64.flatpak
 flatpak run io.github.inzurgent.ProtonInspector
 ```
 
-This package adds a desktop app entry and bundles the working v0.1.0 AppImage.
+This package adds a desktop app entry and bundles the v0.1.2 AppImage.
 It is a **host launcher**, not a sandboxed scanner: its declared host-command
 permission runs the application outside Flatpak's sandbox so it can inspect
 host games. Normal user privileges and Linux memory-access restrictions apply.
@@ -95,6 +95,20 @@ cat /proc/sys/kernel/yama/ptrace_scope
 
 Yama mode 1 commonly prevents attaching to an independently launched game; the child-process demo can still work. Other access controls can also deny access. This prototype reports the denial and does not change permissions. A scoped game-launch/privileged-helper integration is still needed for those configurations. Do not run the whole GUI as root or grant capabilities to a general-purpose Python interpreter.
 
+## Finding a common value such as perk points
+
+If you know the current balance, start with **int32** to reduce duplicate
+interpretations, or use **All numeric types** if the integer search fails.
+Run **New scan**, earn or spend a point, then run **Next scan** with the new
+exact balance. Repeat until a few candidates remain. The first 2,000 rows are
+only a display preview: refinement checks every stored candidate.
+
+Version 0.1.2 removes the old 250,000-match limit. Candidate bitmaps and batched
+memory reads handle large searches without one Python object or system call
+per match. A regression test scans 4,194,304 typed candidates and narrows them
+after a value change. This does not establish the actual perk-point layout of
+any particular game.
+
 ## Scan all numeric types
 
 Choose **All numeric types** (the default) to search `int32`, `uint32`, `int64`,
@@ -130,7 +144,8 @@ Addresses are absolute, not pointers: restarting the game or changing scenes may
 - Exact first scan; exact, changed, unchanged, increased and decreased refinement.
 - Naturally aligned values in readable/writable mappings only. Floating point exact searches compare encoded bytes.
 - First scans run in a background thread with cancellation; partial results are discarded on cancellation.
-- Up to 250,000 candidates; first 2,000 displayed. No unknown-initial-value scanning.
+- Compact candidate bitmaps support millions of matches; only the first 2,000 are displayed. No matches are discarded just because they are not displayed. No unknown-initial-value scanning.
+- Scan snapshots have a 256 MiB storage budget instead of a fixed match-count cap. An over-budget scan reports an error and retains the previous results. Changed-value snapshots may use more storage than exact-value snapshots.
 - Unreadable chunks are skipped and counted. A skipped chunk may contain valid candidates; scans are not atomic snapshots of a running game.
 - No pointer scanner, overlay, disassembler, scripting, Cheat Engine table import, or anti-cheat integration.
 - Freezes are temporary address writes; they cannot track an allocation that moves or is reused inside the same process.
@@ -139,7 +154,7 @@ Addresses are absolute, not pointers: restarting the game or changing scenes may
 ## Verification
 
 ```bash
-python3 -m unittest discover -s . -v
+.venv/bin/python -m unittest discover -s . -v
 ```
 
 Verified in a Fedora 44 container: cross-process reads/writes, exact scans, refinement, cancellation, numeric encodings and process-identity protection. Qt offscreen smoke test covered window creation, demo attachment, editing, freezing, unfreezing and cleanup. The maintainer separately reported successful basic use on Bazzite with Probably Stolen. This is not a comprehensive game compatibility test. Saved-address file validation and round-trip tests are included; the saved-address Qt workflow was also smoke-tested offscreen.

@@ -3,6 +3,9 @@ import ctypes as C
 import errno
 import os
 import struct
+import zlib
+import numpy as np
+from scan_results import Block, ScanResults
 from pathlib import Path
 
 ALL_NUMERIC = 'All numeric types'
@@ -95,7 +98,8 @@ class Memory:
                     raise
         if not needles:
             raise ValueError('Enter a number representable by at least one supported type.')
-        matches = {}
+        blocks = []
+        storage = 0
         skipped = 0
         areas = self.regions() if regions is None else regions
         total = sum(b-a for a,b in areas)
@@ -112,21 +116,26 @@ class Memory:
                 except OSError:
                     skipped += length
                     done += length
+                    progress(done, total)
                     continue
                 for candidate, needle in needles.items():
                     size = len(needle)
-                    offset = data.find(needle)
-                    while offset >= 0:
-                        if stop.is_set():
-                            raise RuntimeError('Scan cancelled; previous results retained.')
-                        if (address+offset) % size == 0:
-                            matches[(address+offset, candidate)] = needle
-                            if len(matches) > 250000:
-                                raise RuntimeError('More than 250,000 matches. Choose a less common initial value.')
-                        offset = data.find(needle, offset+1)
+                    offset = (-address) % size
+                    n = max(0, (length-offset)//size)
+                    if not n: continue
+                    # Compare bit patterns, preserving exact float-search semantics.
+                    values = np.frombuffer(data, dtype=f'<u{size}', count=n, offset=offset)
+                    mask = values == int.from_bytes(needle, 'little')
+                    count = int(np.count_nonzero(mask))
+                    if count:
+                        bits = np.packbits(mask).tobytes()
+                        blocks.append(Block(address, length, candidate, offset, size, bits, count, needle))
+                        storage += len(bits)+len(needle)
+                        if storage > 256*1024*1024:
+                            raise RuntimeError('Scan snapshot exceeds 256 MiB. Select one numeric type and scan again; previous results retained.')
                 done += length
                 progress(done, total)
-        return matches, skipped
+        return ScanResults(blocks), skipped
 
     def refine(self, kind, previous, mode, value, stop):
         target = pack(kind, value) if mode == 'exact' else None
@@ -147,7 +156,9 @@ class Memory:
                 result[address] = new
         return result, 0
 
-    def refine_typed(self, previous, mode, value, stop):
+    def refine_typed(self, previous, mode, value, stop, progress=lambda *_: None):
+        if isinstance(previous, ScanResults):
+            return self.refine_compact(previous, mode, value, stop, progress)
         result = {}
         representable = False
         for kind in TYPES:
@@ -165,3 +176,61 @@ class Memory:
         if mode == 'exact' and previous and not representable:
             raise ValueError('Value cannot be represented by the remaining result types.')
         return result, 0
+
+    def refine_compact(self, previous, mode, value, stop, progress):
+        targets = {}
+        if mode == 'exact':
+            for kind in {b.kind for b in previous.blocks}:
+                try: targets[kind] = pack(kind, value)
+                except (ValueError, OverflowError, struct.error): pass
+            if previous and not targets:
+                raise ValueError('Value cannot be represented by the remaining result types.')
+        blocks = []
+        storage = 0
+        skipped = 0
+        last_key = None
+        current = None
+        for number, block in enumerate(previous.blocks):
+            if stop.is_set():
+                raise RuntimeError('Scan cancelled; previous results retained.')
+            if mode == 'exact' and block.kind not in targets: continue
+            key = (block.address, block.length)
+            if key != last_key:
+                try: current = self.read(*key)
+                except PermissionError: raise
+                except OSError:
+                    current = None
+                    skipped += block.length
+                last_key = key
+            if current is None: continue
+            n = (block.length-block.offset)//block.size
+            def array(data, dtype):
+                return np.frombuffer(data, dtype=dtype, count=n, offset=block.offset)
+            raw_type = f'<u{block.size}'
+            new_bits = array(current, raw_type)
+            if mode == 'exact':
+                keep = new_bits == int.from_bytes(targets[block.kind], 'little')
+            else:
+                old_data = block.data()
+                if mode in ('changed', 'unchanged'):
+                    old = int.from_bytes(old_data, 'little') if block.uniform else array(old_data, raw_type)
+                    keep = new_bits != old if mode == 'changed' else new_bits == old
+                else:
+                    dtype = np.dtype(TYPES[block.kind])
+                    new = array(current, dtype)
+                    old = unpack(block.kind, old_data) if block.uniform else array(old_data, dtype)
+                    if mode == 'increased': keep = new > old
+                    elif mode == 'decreased': keep = new < old
+                    else: raise ValueError('Unknown refinement mode.')
+            keep &= block.mask()
+            count = int(np.count_nonzero(keep))
+            if count:
+                bits = np.packbits(keep).tobytes()
+                uniform = mode == 'exact'
+                baseline = targets[block.kind] if uniform else zlib.compress(current, 1)
+                blocks.append(Block(block.address,block.length,block.kind,block.offset,block.size,bits,count,baseline,uniform))
+                storage += len(bits)+len(baseline)
+                if storage > 256*1024*1024:
+                    raise RuntimeError('Scan snapshot exceeds 256 MiB. Narrow by an exact value or select one numeric type; previous results retained.')
+            progress(number+1, len(previous.blocks))
+        return ScanResults(blocks), skipped

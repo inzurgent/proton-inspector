@@ -1,4 +1,5 @@
 import json
+from itertools import islice
 import struct
 import subprocess
 import sys
@@ -183,7 +184,7 @@ class Window(QMainWindow):
         def execute(progress):
             if first:
                 return memory.scan_typed(kind, value, self.stop, lambda n,t: progress.emit(f'Scanning {n//1048576} / {t//1048576} MiB'))
-            return memory.refine_typed(previous, mode, value, self.stop)
+            return memory.refine_typed(previous, mode, value, self.stop, lambda n,t: progress.emit(f'Refining blocks: {n:,} / {t:,}'))
         self.busy(True)
         self.thread = QThread(self)
         self.worker = Worker(execute); self.worker.moveToThread(self.thread)
@@ -210,7 +211,7 @@ class Window(QMainWindow):
         self.status.setText(f'{len(self.results):,} matches. Showing first 2,000. {skipped:,} bytes skipped due to unreadable/changing mappings.')
 
     def render(self):
-        rows = list(self.results.items())[:2000]
+        rows = list(islice(self.results.items(), 2000))
         self.table.setRowCount(len(rows))
         for row, ((address, kind), data) in enumerate(rows):
             for col, text in enumerate((hex(address), kind, str(unpack(kind, data)), 'Yes' if address in self.frozen else '')):

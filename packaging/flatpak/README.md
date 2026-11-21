@@ -2,15 +2,15 @@
 
 This is a **Flatpak host launcher**, not a sandboxed memory scanner. Flatpak's
 process isolation prevents an ordinary sandboxed app from finding and modifying
-host game processes. The launcher therefore runs the bundled, verified v0.1.0
+host game processes. The launcher therefore runs the bundled, verified v0.1.2
 AppImage on the host using `flatpak-spawn --host`.
 
 ## Install and run
 
-Download `Proton-Inspector-0.1.1-x86_64.flatpak` from [Releases](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.1), then:
+Download `Proton-Inspector-0.1.2-x86_64.flatpak` from [Releases](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.2), then:
 
 ```bash
-flatpak install --user ./Proton-Inspector-0.1.1-x86_64.flatpak
+flatpak install --user ./Proton-Inspector-0.1.2-x86_64.flatpak
 flatpak run io.github.inzurgent.ProtonInspector
 ```
 
@@ -51,11 +51,11 @@ needed after installation on your system.
 
 Requires x86-64 Linux, Python 3, Flatpak and the Freedesktop Platform 25.08 runtime
 installed from Flathub. No SDK, compiler or flatpak-builder is required: the
-payload is already built. Download the v0.1.0 AppImage from Releases first.
+payload is already built. Download the v0.1.2 AppImage from Releases first.
 
 ```bash
 python3 packaging/flatpak/build_flatpak.py \
-  --appimage /path/to/Proton-Inspector-0.1.0-x86_64.AppImage
+  --appimage /path/to/Proton-Inspector-0.1.2-x86_64.AppImage
 ```
 
 The script checks the AppImage's pinned SHA-256, stages the launcher and metadata,

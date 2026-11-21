@@ -61,3 +61,12 @@ dependency licenses and corresponding-source links above still apply. The
 launcher and packaging scripts are MIT licensed. The separately installed
 Freedesktop Platform runtime is provided through its Flatpak remote and retains
 its own licenses. It is not bundled into this repository's source archive.
+
+
+## NumPy (v0.1.2 and later)
+
+Large numeric scans use NumPy. The packaged version is 2.5.5, distributed under
+the BSD 3-Clause license and the additional dependency notices included in its
+wheel metadata. Those notices are preserved under the bundled Python
+site-packages directory. Source and build documentation: https://github.com/numpy/numpy/tree/v2.5.5 .
+The v0.1.2 Flatpak bundles the v0.1.2 AppImage with the same dependency terms.
