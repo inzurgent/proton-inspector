@@ -70,3 +70,13 @@ the BSD 3-Clause license and the additional dependency notices included in its
 wheel metadata. Those notices are preserved under the bundled Python
 site-packages directory. Source and build documentation: https://github.com/numpy/numpy/tree/v2.5.5 .
 The v0.1.2 Flatpak bundles the v0.1.2 AppImage with the same dependency terms.
+
+## Managed assembly inspection (v0.1.4)
+
+- dnfile 0.18.0: MIT, copyright MalwareFrank; https://github.com/malwarefrank/dnfile
+- dncil 1.0.2: Apache-2.0; https://github.com/mandiant/dncil
+- pefile 2024.8.26: MIT, copyright Ero Carrera; https://github.com/erocarrera/pefile
+
+These packages are bundled unmodified. Their license files and distribution
+metadata are retained in the bundled Python site-packages directory. No game
+assemblies or other proprietary game assets are included in the distribution.

@@ -15,5 +15,5 @@ fi
 # Host execution is intentional: a sandbox cannot inspect host game processes.
 # No elevation or ptrace policy changes are performed.
 exec /usr/bin/flatpak-spawn --host --watch-bus \
-    "$app_path/lib/proton-inspector/Proton-Inspector-0.1.3-x86_64.AppImage" \
+    "$app_path/lib/proton-inspector/Proton-Inspector-0.1.4-x86_64.AppImage" \
     --appimage-extract-and-run "$@"

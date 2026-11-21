@@ -13,7 +13,7 @@ import tarfile
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.1.3'
+VERSION = '0.1.4'
 DOWNLOADS = {
     'python.AppImage': ('https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.15-cp312-cp312-manylinux2014_x86_64.AppImage', 'a6a9bf619a3e21c5623be144d8ac4e458e1a5b5c133b1cc99b142d6e71b82c76'),
     'appimagetool.AppImage': ('https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage', 'e8c1169c4af66c3184d7ee110713d4be04befe671fa358e2c1591ee840553b03'),
@@ -48,7 +48,7 @@ def main():
     extract_appimage(work/'python.AppImage',appdir)
     extract_appimage(work/'appimagetool.AppImage',work/'appimagetool.AppDir')
     python=appdir/'opt/python3.12/bin/python3.12'
-    subprocess.run([str(python),'-m','pip','install','PySide6-Essentials==6.8.3','numpy==2.5.5'],check=True)
+    subprocess.run([str(python),'-m','pip','install','PySide6-Essentials==6.8.3','numpy==2.5.5','dnfile==0.18.0','dncil==1.0.2','pefile==2024.8.26'],check=True)
     # Include the X11 helper libraries and their Debian copyright notices.
     for package in json.loads((ROOT/'packaging/debian-lock.json').read_text()):
         archive=work/Path(package['Filename']).name

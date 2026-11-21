@@ -16,18 +16,18 @@ A lightweight Linux desktop memory scanner and editor for games running through 
 ## Releases and downloads
 
 Download the **x86-64 AppImage** from [GitHub Releases](https://github.com/inzurgent/proton-inspector/releases).
-The current packaged release is **v0.1.3**, an experimental Linux desktop build.
+The current packaged release is **v0.1.4**, an experimental Linux desktop build.
 Python and Qt are included; no pip installation is needed.
 
 ```bash
-chmod +x Proton-Inspector-0.1.3-x86_64.AppImage
-./Proton-Inspector-0.1.3-x86_64.AppImage
+chmod +x Proton-Inspector-0.1.4-x86_64.AppImage
+./Proton-Inspector-0.1.4-x86_64.AppImage
 ```
 
 If your system cannot mount AppImages through FUSE:
 
 ```bash
-./Proton-Inspector-0.1.3-x86_64.AppImage --appimage-extract-and-run
+./Proton-Inspector-0.1.4-x86_64.AppImage --appimage-extract-and-run
 ```
 
 A `SHA256SUMS` file accompanies the release. Run `sha256sum -c SHA256SUMS`
@@ -36,17 +36,17 @@ uses the same Linux process permissions as the source version. See the
 [packaging guide](packaging/README.md) for build instructions, extraction,
 library replacement and platform limitations.
 
-### Flatpak (v0.1.3)
+### Flatpak (v0.1.4)
 
-Download `Proton-Inspector-0.1.3-x86_64.flatpak` from
-[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.3):
+Download `Proton-Inspector-0.1.4-x86_64.flatpak` from
+[the Flatpak release](https://github.com/inzurgent/proton-inspector/releases/tag/v0.1.4):
 
 ```bash
-flatpak install --user ./Proton-Inspector-0.1.3-x86_64.flatpak
+flatpak install --user ./Proton-Inspector-0.1.4-x86_64.flatpak
 flatpak run io.github.inzurgent.ProtonInspector
 ```
 
-This package adds a desktop app entry and bundles the v0.1.3 AppImage.
+This package adds a desktop app entry and bundles the v0.1.4 AppImage.
 It is a **host launcher**, not a sandboxed scanner: its declared host-command
 permission runs the application outside Flatpak's sandbox so it can inspect
 host games. Normal user privileges and Linux memory-access restrictions apply.
@@ -109,7 +109,7 @@ per match. A regression test scans 4,194,304 typed candidates and narrows them
 after a value change. This does not establish the actual perk-point layout of
 any particular game.
 
-## Unknown initial value (v0.1.3)
+## Unknown initial value (v0.1.4)
 
 1. Attach to the game and select **Unknown initial value** under **New scan mode**.
 2. Choose a numeric type (start with `int32`) or **All numeric types**.
@@ -205,3 +205,39 @@ virtual environments, caches, and personal address lists out of commits.
 PySide6, Qt, and other dependencies retain their own licenses; see
 [Third-party notices](THIRD_PARTY_NOTICES.md). The source archive does not bundle
 those dependencies.
+
+## Unity / Mono assembly inspection (v0.1.4)
+
+Open the **Unity / Mono** tab and choose a game's
+`<game>_Data/Managed/Assembly-CSharp.dll`. When attached to a Unity game,
+the file picker tries to start at that game's managed assembly. Search classes,
+field names or method names; select a class to view fields and disassembled IL.
+This is offline metadata inspection, not a live object browser, debugger,
+method injector or Mono runtime bridge. IL2CPP assemblies are not supported.
+RVA labels are file-relative virtual addresses, not addresses to paste into the
+memory editor. Fields may describe old or inactive game code.
+
+### Probably Stolen starting-perk patch
+
+The supported `NewGamePerksUI` calculates its available balance from a starting
+budget of 3 minus the selected perks' total cost. It also checks that budget
+when continuing. The patch updates both sites together, after checking their
+original instruction patterns. It supports a **total budget of 3–8**, preserving
+instruction lengths and branch offsets. The perk-slot limit is unchanged.
+
+1. Close Probably Stolen.
+2. Open its `Probably Stolen_Data/Managed/Assembly-CSharp.dll` in the Mono tab.
+3. Select the budget and choose **Apply perk-budget patch…**.
+4. Confirm the file and change, then launch the game.
+
+The original DLL and a checksum record are stored beside the DLL. Choose
+**Restore original…** while the game is closed to undo. Restore refuses to
+overwrite a game file changed by an update or another mod. Do not delete the
+backup while the patch is installed. Restore before updating when practical;
+Steam file verification can replace modified game files. Repeated application
+requires restoring first. This is a reversible on-disk patch, not a live change
+or a mod-loader plugin. The app never downloads or distributes game code.
+
+Validated against the locally installed assembly on a temporary copy: both
+budget constants change and restoration is byte-for-byte exact. In-game
+behavior still requires testing after restart.

@@ -8,6 +8,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QThread, QTimer, Signal
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QComboBox, QLineEdit, QLabel, QTableWidget, QTableWidgetItem, QMessageBox, QTabWidget, QFileDialog, QInputDialog)
+from mono_panel import MonoPanel
 from memory import Memory, processes, pack, unpack, TYPES, ALL_NUMERIC
 from address_book import load_book, save_book, LIMIT
 
@@ -100,6 +101,8 @@ class Window(QMainWindow):
         self.load_list = QPushButton('Load list…')
         self.row(saved_layout, self.rename_saved, self.remove_saved, self.refresh_saved, self.save_list, self.load_list)
         self.tabs.addTab(saved_page, 'Saved addresses (0)')
+        self.mono_panel = MonoPanel(self)
+        self.tabs.addTab(self.mono_panel, 'Unity / Mono')
         layout.addWidget(self.tabs)
         self.edit = QLineEdit(); self.edit.setPlaceholderText('New value for selected address')
         self.write = QPushButton('Write value'); self.freeze = QPushButton('Freeze value'); self.unfreeze = QPushButton('Unfreeze all')
