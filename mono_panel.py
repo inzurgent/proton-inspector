@@ -11,6 +11,9 @@ class LocationEdit(QLineEdit):
     def __init__(self, dialog):
         super().__init__(dialog)
         self.dialog = dialog
+        # The app-wide QLineEdit padding would be applied a second time inside
+        # the combo's already padded edit area, clipping the text vertically.
+        self.setStyleSheet('QLineEdit { padding: 0px; border: none; background: transparent; }')
         self.setToolTip('Click to paste a folder or full DLL path, then press Enter')
 
     def mousePressEvent(self, event):
@@ -59,6 +62,8 @@ def assembly_dialog(parent, initial):
         location.setLineEdit(edit)
         edit.setText(dialog.directory().absolutePath())
         dialog.directoryEntered.connect(edit.setText)
+    screen = dialog.screen().availableGeometry()
+    dialog.resize(min(1000, screen.width() - 40), min(600, screen.height() - 40))
     return dialog
 
 
